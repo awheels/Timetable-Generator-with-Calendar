@@ -1,8 +1,34 @@
 <?!= HtmlService.createHtmlOutputFromFile('Styles').getContent() ?>
 
 <section>
-  <h1>Put your html elements inside this section block</h1>
+  <h1>Setup your Timetable</h1>
 </section>
 
+<div class="block form-group">
+  <label for="select">Select the # of days in cycle:</label>
+  <select id="select">
+    <option selected>2</option>
+    <option>3</option>
+    <option>4</option>
+    <option>5</option>
+    <option>6</option>
+    <option>7</option>
+    <option>8</option>
+  </select>
+</div>
+
+<div class="block form-group">
+  <label for="select">Select the number of periods per day:</label>
+  <select id="select">
+    <option selected>3</option>
+    <option>4</option>
+    <option>5</option>
+    <option>6</option>
+    <option>7</option>
+    <option>8</option>
+  </select>
+</div>
+
+<button class="create" onclick="google.script.run.createTemplate()">Create</button>
 
 <?!= HtmlService.createHtmlOutputFromFile('Javascript').getContent() ?>
