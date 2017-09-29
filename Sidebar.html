@@ -4,31 +4,42 @@
   <h1>Setup your Timetable</h1>
 </section>
 
-<div class="block form-group">
-  <label for="select">Select the # of days in cycle:</label>
-  <select id="select">
-    <option selected>2</option>
-    <option>3</option>
-    <option>4</option>
-    <option>5</option>
-    <option>6</option>
-    <option>7</option>
-    <option>8</option>
-  </select>
-</div>
+<form id="myForm">
+  <div class="block form-group">
+    <label for="select">Select the # of days in cycle:</label>
+    <select id="select_cycles" name="cycle">
+      <option selected>2</option>
+      <option>3</option>
+      <option>4</option>
+      <option>5</option>
+      <option>6</option>
+      <option>7</option>
+      <option>8</option>
+    </select>
+  </div>
 
-<div class="block form-group">
-  <label for="select">Select the number of periods per day:</label>
-  <select id="select">
-    <option selected>3</option>
-    <option>4</option>
-    <option>5</option>
-    <option>6</option>
-    <option>7</option>
-    <option>8</option>
-  </select>
-</div>
+  <div class="block form-group">
+    <label for="select">Select the number of periods per day:</label>
+    <select id="select_periods" name="periods">
+      <option selected>3</option>
+      <option>4</option>
+      <option>5</option>
+      <option>6</option>
+      <option>7</option>
+      <option>8</option>
+    </select>
+  </div>
+</form>
 
-<button class="create" onclick="google.script.run.createTemplate()">Create</button>
+<button class="create" onclick="submitData()">Create</button>
+
+<script>
+  window.submitData = function() {
+    var cycles = document.getElementById('select_cycles').value;
+    var periods = document.getElementById('select_periods').value;
+
+    google.script.run.createTemplate(cycles, periods);
+  };
+</script>
 
 <?!= HtmlService.createHtmlOutputFromFile('Javascript').getContent() ?>

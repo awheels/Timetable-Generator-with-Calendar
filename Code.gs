@@ -16,16 +16,82 @@ function openSidebar() {
   SpreadsheetApp.getUi().showSidebar(html);
 }
 
-function createTemplate() {
+function createTemplate(cycles, periods) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var tz = ss.getSpreadsheetTimeZone();
+  
+  //***TIMETABLE TEMPLATE CREATION***//
+  
+  //creating timetable/schedule template
+  var old_schedule = ss.getSheetByName('Timetable');
   var date = Utilities.formatDate(new Date(), tz, 'MM-dd-yyyy HH:MM:SS');
-  ss.insertSheet('Template'+date, 1);
+  old_schedule.setName('Old Timetable ' + date);
+  ss.insertSheet('Timetable', 1);
   var activeSheet = ss.getActiveSheet();
-  for (x=0; x<5; x++){
-    activeSheet.getRange(5*x+5,1,5,1).mergeVertically();   
-    activeSheet.getRange(5*x+5,1,5,1).setBorder(true, true, true, true, false, false);
+  for (x=1; x<=cycles; x++){
+      activeSheet.getRange(2,x,3,1).setBorder(true, true, true, true, false, true);
+      activeSheet.getRange(3,x,1,1).setBackground("#cfe2f3");
+      activeSheet.getRange(4,x,1,1).setBackground("#38761d");
+      activeSheet.getRange(2,x,1,1)
+        .setValue(x)
+        .setHorizontalAlignment("center")
+        .setFontWeight("bold");
+    for (y=0; y<periods; y++){
+      activeSheet.getRange(5*y+6,x,4,1).mergeVertically();   
+      activeSheet.getRange(5*y+5,x,5,1).setBorder(true, true, true, true, false, false);
+    }
   }
+
+  //creating instruction message for timetable/schedule
+  activeSheet.getRange(2,parseInt(cycles)+2,7,2).merge()
+    .setBorder(true, true, true, true, false, false)
+    .setValue("Please enter your timetable/schedule to the template on the left. I suggest coloring and titling similarly to the example below. This template will be used to generate your weekly schedule.")
+    .setVerticalAlignment('top')
+    .setWrap(true); 
+  
+  //creating example formating for schedule/timetable
+  activeSheet.getRange(11,parseInt(cycles)+2,4,1).merge();
+  activeSheet.getRange(10,parseInt(cycles)+2,5,1)
+    .setBorder(true, true, true, true, false, false)
+    .setBackground('#fff2cc');
+  activeSheet.getRange(10,parseInt(cycles)+2,1,1)
+    .setValue("Math 9")
+    .setHorizontalAlignment("center")
+    .setFontWeight("bold");  
+  
+  
+  //***BLANK WEEKLY SCHEDULE TEMPLATE CREATION***//
+
+  var weekday=new Array(7);
+  weekday[0]="Monday";
+  weekday[1]="Tuesday";
+  weekday[2]="Wednesday";
+  weekday[3]="Thursday";
+  weekday[4]="Friday";
+
+  var old_blank = ss.getSheetByName("Blank");
+  var date2 = Utilities.formatDate(new Date(), tz, 'MM-dd-yyyy HH:MM:SS');
+  old_blank.setName('Old Blank ' + date2);
+  ss.insertSheet('Blank', ss.getNumSheets());
+  var blank = ss.getSheetByName("Blank");
+
+  for (y=0; y<periods; y++){
+    //creating for column of blank template
+    blank.getRange(5+5*y,1,5,1).mergeVertically();   
+    blank.getRange(5+5*y,1,5,1).setBorder(true, true, true, true, false, false);
+    blank.getRange(2,1,3,1).setBorder(true, true, true, true, false, true);
+    blank.getRange(3,1,1,1).setBackground("#cfe2f3");
+    blank.getRange(4,1,1,1).setBackground("#38761d");  
+    for (x=1; x<=5; x++){
+      //creating columns 1-5 (M-F) of blank template
+      blank.getRange(5*y+6,x+1,4,1).mergeVertically();   
+      blank.getRange(5*y+5,x+1,5,1).setBorder(true, true, true, true, false, false);
+      blank.getRange(2,x+1,3,1).setBorder(true, true, true, true, false, true);
+      blank.getRange(3,x+1,1,1).setBackground("#cfe2f3");
+      blank.getRange(4,x+1,1,1).setBackground("#38761d");
+      blank.getRange(4,x+1,1,1).setFontColor("white").setHorizontalAlignment("center").setValue(weekday[x-1]);
+    }
+  }                              
 }
 
 function setDates(){
