@@ -19,20 +19,19 @@ function openSidebar() {
   SpreadsheetApp.getUi().showSidebar(html);
 }
 
-function createTemplate(cycles, periods) {
+function createTemplate(cycles, periods, selectedDate) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var tz = ss.getSpreadsheetTimeZone();
   
-  //***TIMETABLE TEMPLATE CREATION***//
-  
-  //creating timetable/schedule template
+  //creating timetable template
   if (ss.getSheetByName('Timetable') != null){
     var old_schedule = ss.getSheetByName('Timetable');
-    Logger.log(tz);
     var date = Utilities.formatDate(new Date(), tz, 'MM-dd-yyyy HH:MM:SS');
     old_schedule.setName('Old Timetable ' + date);
   }
+  
   ss.insertSheet('Timetable', 1);
+  
   var activeSheet = ss.getActiveSheet();
   for (x=1; x<=cycles; x++){
       activeSheet.getRange(2,x,3,1).setBorder(true, true, true, true, false, true);
@@ -48,7 +47,7 @@ function createTemplate(cycles, periods) {
     }
   }
 
-  //creating instruction message for timetable/schedule
+  //creating instruction message for timetable
   activeSheet.getRange(2,parseInt(cycles)+2,7,2).merge()
     .setBorder(true, true, true, true, false, false)
     .setValue("Please enter your timetable/schedule to the template on the left. I suggest coloring and titling similarly to the example below. This template will be used to generate your weekly schedule.")
@@ -70,88 +69,90 @@ function createTemplate(cycles, periods) {
   activeSheet.getRange(1,2,1,1).setValue(cycles);
   activeSheet.getRange(1,3,1,1).setValue("Periods");
   activeSheet.getRange(1,4,1,1).setValue(periods);
-  //***BLANK WEEKLY SCHEDULE TEMPLATE CREATION***//
 
-  var weekday=new Array(7);
-  weekday[0]="Monday";
-  weekday[1]="Tuesday";
-  weekday[2]="Wednesday";
-  weekday[3]="Thursday";
-  weekday[4]="Friday";
+  //creating first weekly plan template
+  var startEndDate = getStartAndEndWeekDates(false, new Date(selectedDate));
+  Logger.log(selectedDate);  
+  Logger.log(startEndDate);
+  ss.insertSheet(startEndDate[0]+"_"+startEndDate[1]);
+  var blank = ss.getSheetByName(startEndDate[0]+"_"+startEndDate[1]);
 
-  if (ss.getSheetByName('Blank') != null){
-    var old_blank = ss.getSheetByName("Blank");
-    var date2 = Utilities.formatDate(new Date(), tz, 'MM-dd-yyyy HH:MM:SS');
-    old_blank.setName('Old Blank ' + date2);
-  }
-  ss.insertSheet('Blank', ss.getNumSheets());
-  var blank = ss.getSheetByName("Blank");
-
+  writeDates(blank, new Date(selectedDate));
+  writeDaysOfWeek(blank);
+  createFirstBlankColumn(blank, periods);
+  writeCycleDays(blank, cycles, 1);
+  
   for (y=0; y<periods; y++){
-    //creating for column of blank template
-    blank.getRange(5+5*y,1,5,1).mergeVertically();   
-    blank.getRange(5+5*y,1,5,1).setBorder(true, true, true, true, false, false);
-    blank.getRange(2,1,3,1).setBorder(true, true, true, true, false, true);
-    blank.getRange(3,1,1,1).setBackground("#cfe2f3");
-    blank.getRange(4,1,1,1).setBackground("#38761d");  
-    var rule = SpreadsheetApp.newDataValidation().requireDate().build();
-
     for (x=1; x<=5; x++){
-      //creating columns 1-5 (M-F) of blank template
       blank.getRange(5*y+6,x+1,4,1).mergeVertically();   
       blank.getRange(5*y+5,x+1,5,1).setBorder(true, true, true, true, false, false);
-      blank.getRange(2,x+1,3,1).setBorder(true, true, true, true, false, true);
-      blank.getRange(3,x+1,1,1).setBackground("#cfe2f3");
-      blank.getRange(4,x+1,1,1).setBackground("#38761d")
-        .setFontColor("white")
-        .setHorizontalAlignment("center")
-        .setValue(weekday[x-1]);
       blank.setColumnWidth(x+1, 175);
-      blank.getRange(3,x+1,1,1).setDataValidation(rule)
-        .setNumberFormat("mmm d")
-        .setHorizontalAlignment("center")
-        .setFontWeight('bold');
-      if (x != 1) {
-        blank.getRange(3,x+1,1,1).setFormulaR1C1("=IF(ISBLANK(R[0]C[-1]),,R[0]C[-1]+1)")
-          .setNumberFormat("mmm d");
-        blank.getRange(2,x+1,1,1).setFormulaR1C1("=IF(ISBLANK(R[0]C[-1]),,IF(R[0]C[-1]="+parseInt(cycles)+",1,R[0]C[-1]+1))")
-          .setHorizontalAlignment("center")
-          .setFontWeight('bold');
-      }
-      blank.getRange(2,2,1,1).setValue(1)
+    }
+  }                              
+}
+
+function writeDates(sheet, initialDate){
+  var rule = SpreadsheetApp.newDataValidation().requireDate().build();
+
+  for (x=1; x<=5; x++){
+    sheet.getRange(3,x+1,1,1).setBackground("#cfe2f3");
+    sheet.getRange(3,x+1,1,1).setDataValidation(rule)
+      .setNumberFormat("mmm d")
+      .setHorizontalAlignment("center")
+      .setFontWeight('bold')
+      .setValue(initialDate);
+    if (x != 1) {
+      sheet.getRange(3,x+1,1,1).setFormulaR1C1("=IF(ISBLANK(R[0]C[-1]),,R[0]C[-1]+1)")
+        .setNumberFormat("mmm d");
+    }
+  }
+}
+
+function writeCycleDays(sheet, numCycles, cycleDayNum){
+  for (x=1; x<=5; x++){
+    sheet.getRange(2,x+1,3,1).setBorder(true, true, true, true, false, true);
+    if (x != 1) {
+      sheet.getRange(2,x+1,1,1).setFormulaR1C1("=IF(ISBLANK(R[0]C[-1]),,IF(R[0]C[-1]="+parseInt(numCycles)+",1,R[0]C[-1]+1))")
         .setHorizontalAlignment("center")
         .setFontWeight('bold');
     }
-  }                              
+  }
+  sheet.getRange(2,2,1,1).setValue(cycleDayNum)
+    .setHorizontalAlignment("center")
+    .setFontWeight('bold');
+}
+
+function createFirstBlankColumn(sheet, periods){
+  for (y=0; y<periods; y++){
+    sheet.getRange(5+5*y,1,5,1).mergeVertically();   
+    sheet.getRange(5+5*y,1,5,1).setBorder(true, true, true, true, false, false);
+    sheet.getRange(2,1,3,1).setBorder(true, true, true, true, false, true);
+    sheet.getRange(3,1,1,1).setBackground("#cfe2f3");
+    sheet.getRange(4,1,1,1).setBackground("#38761d");
+  }
 }
 
 function addNextWeek(){
   var ss = SpreadsheetApp.getActiveSpreadsheet(); 
   
   var cyclesAndPeriodsArray = getMasterCyclesAndPeriods(ss);
-
-//***NEXT WEEK CREATION***//
-  
-  var prevSheetInfo = getPrevSheetDateAndCycles(false);
+  var prevSheetInfo = getSheetsEndDateAndCycles(ss, false);
   
   ss.insertSheet(prevSheetInfo[0]+"_"+prevSheetInfo[1], ss.getNumSheets());
   var blank = ss.getSheetByName(prevSheetInfo[0]+"_"+prevSheetInfo[1]);
 
-  for (y=0; y<cyclesAndPeriodsArray[1]; y++){
-    //creating for column of blank template
-    blank.getRange(5+5*y,1,5,1).mergeVertically();   
-    blank.getRange(5+5*y,1,5,1).setBorder(true, true, true, true, false, false);
-    blank.getRange(2,1,3,1).setBorder(true, true, true, true, false, true);
-    blank.getRange(3,1,1,1).setBackground("#cfe2f3");
-    blank.getRange(4,1,1,1).setBackground("#38761d");  
+  writeDates(blank, prevSheetInfo[0]);
+  writeDaysOfWeek(blank);
+  createFirstBlankColumn(blank, cyclesAndPeriodsArray[1]);
+  writeCycleDays(blank, cyclesAndPeriodsArray[0], prevSheetInfo[2]);
 
+  for (y=0; y<cyclesAndPeriodsArray[1]; y++){
     for (x=1; x<=5; x++){
       //creating columns 1-5 (M-F) of blank template
       blank.getRange(5*y+6,x+1,4,1).mergeVertically();   
       blank.getRange(5*y+5,x+1,5,1).setBorder(true, true, true, true, false, false);
+      blank.setColumnWidth(x+1, 175);
     }
-    
-    setDatesAndCycleForSheet(cyclesAndPeriodsArray[0], prevSheetInfo);    
   }  
 }
 
@@ -164,10 +165,7 @@ function getMasterCyclesAndPeriods(ss){
   return cyclesAndPeriodsArray;
 }
 
-function setDatesAndCycleForSheet(cycles, infoArray){
-  var ss = infoArray[3];
-  var sheet = ss.getActiveSheet();
-
+function writeDaysOfWeek(sheet){
   var weekday=new Array(7);
   weekday[0]="Monday";
   weekday[1]="Tuesday";
@@ -175,36 +173,15 @@ function setDatesAndCycleForSheet(cycles, infoArray){
   weekday[3]="Thursday";
   weekday[4]="Friday";
 
-  var rule = SpreadsheetApp.newDataValidation().requireDate().build();
   for (x=1; x<=5; x++){
-    sheet.getRange(2,x+1,3,1).setBorder(true, true, true, true, false, true);
-    sheet.getRange(3,x+1,1,1).setBackground("#cfe2f3");
     sheet.getRange(4,x+1,1,1).setBackground("#38761d")
       .setFontColor("white")
       .setHorizontalAlignment("center")
       .setValue(weekday[x-1]);
-    sheet.setColumnWidth(x+1, 175);
-    sheet.getRange(3,x+1,1,1).setDataValidation(rule)
-      .setNumberFormat("mmm d")
-      .setHorizontalAlignment("center")
-      .setFontWeight('bold')
-      .setValue(infoArray[0]);
-    if (x != 1) {
-      sheet.getRange(3,x+1,1,1).setFormulaR1C1("=IF(ISBLANK(R[0]C[-1]),,R[0]C[-1]+1)")
-        .setNumberFormat("mmm d");
-      sheet.getRange(2,x+1,1,1).setFormulaR1C1("=IF(ISBLANK(R[0]C[-1]),,IF(R[0]C[-1]="+parseInt(cycles)+",1,R[0]C[-1]+1))")
-        .setHorizontalAlignment("center")
-        .setFontWeight('bold');
-    }
-    sheet.getRange(2,2,1,1).setValue(infoArray[2]+1)
-      .setHorizontalAlignment("center")
-      .setFontWeight('bold');
   }
 }
 
-function getPrevSheetDateAndCycles(byIndex){
-  var ss = SpreadsheetApp.getActiveSpreadsheet(); 
-  
+function getSheetsEndDateAndCycles(ss, byIndex){
   if (byIndex){
     var activeSh = ss.getActiveSheet();
     var activeSheetIndex = activeSh.getIndex();
@@ -217,53 +194,40 @@ function getPrevSheetDateAndCycles(byIndex){
   var lastCycleNum = prevSheet.getRange(2,6,1,1).getValue();
   var lastMonday = prevSheet.getRange(3,2,1,1).getValue();
 
-  lastMonday.setDate(lastMonday.getDate()+7);
-  var mondayDate = Utilities.formatDate(lastMonday, Session.getScriptTimeZone(), "MMMd");
-  lastMonday.setDate(lastMonday.getDate()+4);
-  var fridayDate = Utilities.formatDate(lastMonday, Session.getScriptTimeZone(), "MMMd");
-  var infoArray = [mondayDate, fridayDate, lastCycleNum, ss];
+  var dateArray = getStartAndEndWeekDates(true, lastMonday);
+
+  var infoArray = [dateArray[0], dateArray[1], lastCycleNum, ss];
   
   return infoArray;
+}
+
+function getStartAndEndWeekDates(prevWeek, monday){
+  if (prevWeek){
+    monday.setDate(monday.getDate()+7);
+    var mondayDate = Utilities.formatDate(monday, Session.getScriptTimeZone(), "MMMd");
+    monday.setDate(monday.getDate()+4);
+    var fridayDate = Utilities.formatDate(monday, Session.getScriptTimeZone(), "MMMd");
+  }else{
+    var mondayDate = Utilities.formatDate(monday, Session.getScriptTimeZone(), "MMMd");
+    monday.setDate(monday.getDate()+4);
+    var fridayDate = Utilities.formatDate(monday, Session.getScriptTimeZone(), "MMMd");  
+  }
+  
+  return [mondayDate, fridayDate];
 }
 
 function updateDates(){
   var ss = SpreadsheetApp.getActiveSpreadsheet(); 
 
-  var prevSheetInfo = getPrevSheetDateAndCycles(true);
+  var prevSheetInfo = getSheetsEndDateAndCycles(ss, true);
   var cyclesAndPeriods = getMasterCyclesAndPeriods(ss);
   
   setDatesAndCycleForSheet(cyclesAndPeriods[0], prevSheetInfo);
+
+  //var date = range.getValues();
+  //var dateFormatted = new Date(date[0][0]);
+  //var newDate = new Date(dateFormatted.getTime()+3*3600000*24);
 }
-
-function previousCell(spreadSheet, activeSheet) {
-  var activeSheetIndex = activeSheet.getIndex();
-  var preSheetIndex = activeSheetIndex - 2;
-  var preSheet = spreadSheet.getSheets()[preSheetIndex];
-  var range = preSheet.getRange(2,6);
-
-  var data = range.getValues();
-  data = +data + 1;
-
-  if (data == 9) {
-    activeSheet.getRange('B2').setValue(1);
-  } else {
-    activeSheet.getRange('B2').setValue(data);
-  }
-}
-
-function previousCellDate(spreadSheet, activeSheet) {
-  var activeSheetIndex = activeSheet.getIndex();
-  var preSheetIndex = activeSheetIndex - 2;
-  var preSheet = spreadSheet.getSheets()[preSheetIndex];
-  var range = preSheet.getRange(3,6);
-
-  var date = range.getValues();
-  var dateFormatted = new Date(date[0][0]);
-  var newDate = new Date(dateFormatted.getTime()+3*3600000*24);
-
-  activeSheet.getRange('B3').setValue(newDate);
-}
-
 
 function copyFormat() {
   var ss = SpreadsheetApp.getActiveSpreadsheet(); 
@@ -277,7 +241,6 @@ function copyFormat() {
     copyColumn(sh1, activeSh, result, 2+i);
   }
 }
-
 
 function copyColumn(template, activeSheet, dayNumber, day) {
   if (dayNumber == 1){
