@@ -28,8 +28,9 @@
       <option>7</option>
       <option>8</option>
     </select>
-  </div>
-</form>
+  </div> 
+</form> 
+
 
 <button class="create" onclick="submitData()">Create</button>
 
@@ -41,5 +42,6 @@
     google.script.run.createTemplate(cycles, periods);
   };
 </script>
+
 
 <?!= HtmlService.createHtmlOutputFromFile('Javascript').getContent() ?>
