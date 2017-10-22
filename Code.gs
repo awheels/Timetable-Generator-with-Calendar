@@ -1,3 +1,7 @@
+//add pop up message at beginning describing flow
+//error messages (duplicate sheet, etc)
+//wrap text and align at top
+
 function onOpen() {
   var ui = SpreadsheetApp.getUi()
   ui.createMenu("Template Generator")
@@ -5,6 +9,8 @@ function onOpen() {
     .addItem('Update Dates for Current Sheet', 'updateDates')
     .addItem('Update Timetable for Current Sheet', 'copyFormat')
     .addItem('Add Next Week', 'addNextWeek')
+    .addItem('Create New Calendar', 'createNewCalendar')
+    .addItem('Update Calendar for Current Sheet', 'updateCalendar')
     .addToUi();
 }
 
@@ -17,6 +23,56 @@ function openSidebar() {
     .evaluate();
   
   SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function createNewCalendar(){
+  var calendar = CalendarApp.createCalendar('SWIS Timetable');
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet(); 
+  
+  var sh1 = ss.getSheetByName('Timetable');
+  var activeSh = ss.getActiveSheet();
+  
+  var c = activeSh.getRange(1,2,1,1).getValue();
+  
+  activeSh.getRange(16,parseInt(c)+2,1,1)
+    .setValue("Current Calendar")
+    .setBorder(true, true, true, true, false, false)
+    .setHorizontalAlignment("center")
+    .setFontWeight("bold")
+    .setWrap(true); 
+  activeSh.getRange(16,parseInt(c)+3,1,1)
+    .setBorder(true, true, true, true, false, false)
+    .setValue(calendar.getName())
+    .setWrap(true)
+    .setVerticalAlignment('center');
+  activeSh.getRange(16,parseInt(c)+4,1,3).merge()
+    .setBorder(true, true, true, true, false, false)
+    .setValue(calendar.getId())
+    .setWrap(true)
+    .setVerticalAlignment('center');    
+  activeSh.getRange(17,parseInt(c)+2,3,5).merge()
+    .setBorder(true, true, true, true, false, false)
+    .setValue("This identifies the currently linked calendar. It is important that the calendar name here matches the name of the calendar in the Google Calendar application.")
+    .setVerticalAlignment('top')
+    .setWrap(true);     
+}
+
+function updateCalendar(){
+  var ss = SpreadsheetApp.getActiveSpreadsheet(); 
+  var sh1 = ss.getSheetByName('Timetable');
+  var activeSh = ss.getActiveSheet();
+  var c = activeSh.getRange(1,2,1,1).getValue();
+
+  var calendarName = activeSh.getRange(16,parseInt(c)+3,1,1).getValue();
+  var calendarId = activeSh.getRange(16,parseInt(c)+4,1,1).getValue();
+  
+  Logger.log(calendarName);
+  Logger.log(calendarId);
+  
+  var calendar = CalendarApp.getCalendarById(calendarId);
+  
+  Logger.log(calendar.getName());  
 }
 
 function createTemplate(cycles, periods, selectedDate) {
@@ -42,8 +98,9 @@ function createTemplate(cycles, periods, selectedDate) {
         .setHorizontalAlignment("center")
         .setFontWeight("bold");
     for (y=0; y<periods; y++){
-      activeSheet.getRange(5*y+6,x,4,1).mergeVertically();   
+      activeSheet.getRange(5*y+6,x,4,1).mergeVertically().setVerticalAlignment("top").setWrap(true);
       activeSheet.getRange(5*y+5,x,5,1).setBorder(true, true, true, true, false, false);
+      activeSheet.getRange(5*y+5,x,1,1).setHorizontalAlignment("center").setFontWeight("bold");
     }
   }
 
@@ -54,8 +111,8 @@ function createTemplate(cycles, periods, selectedDate) {
     .setVerticalAlignment('top')
     .setWrap(true); 
   
-  //creating example formating for schedule/timetable
-  activeSheet.getRange(11,parseInt(cycles)+2,4,1).merge();
+  //creating example formating for timetable
+  activeSheet.getRange(11,parseInt(cycles)+2,4,1).merge().setWrap(true).setVerticalAlignment("top");
   activeSheet.getRange(10,parseInt(cycles)+2,5,1)
     .setBorder(true, true, true, true, false, false)
     .setBackground('#fff2cc');
@@ -72,8 +129,6 @@ function createTemplate(cycles, periods, selectedDate) {
 
   //creating first weekly plan template
   var startEndDate = getStartAndEndWeekDates(false, new Date(selectedDate));
-  Logger.log(selectedDate);  
-  Logger.log(startEndDate);
   ss.insertSheet(startEndDate[0]+"_"+startEndDate[1]);
   var blank = ss.getSheetByName(startEndDate[0]+"_"+startEndDate[1]);
 
@@ -84,7 +139,7 @@ function createTemplate(cycles, periods, selectedDate) {
   
   for (y=0; y<periods; y++){
     for (x=1; x<=5; x++){
-      blank.getRange(5*y+6,x+1,4,1).mergeVertically();   
+      blank.getRange(5*y+6,x+1,4,1).mergeVertically();
       blank.getRange(5*y+5,x+1,5,1).setBorder(true, true, true, true, false, false);
       blank.setColumnWidth(x+1, 175);
     }
